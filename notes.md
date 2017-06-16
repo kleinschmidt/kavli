@@ -133,11 +133,18 @@ perception.
         * Computational level: inference (speech as example, focus on
           prediction)
         * Implementation level: efficiency (allocate time, space, energy)
-    * Connection between inference and efficiency considerations:
+    * There's a deep connection between inference and efficiency considerations:
         * quantify efficiency as mutual information between the stimulus (which
           is a fact about the world) and neural population response (which is
-          all that you have to go on)
+          all that you have to go on).
+        * If you don't make accurate predictions, you're either going to miss
+          potentially informative things (don't cover that part of stimulus
+          space), or you're going to allocate a lot of resources to things that
+          aren't very informative (they're complementary).
 * _Which_ statistics does the brain care about?
     * "Statistics of the world" are **non-stationary**: change from one
       situation to the another.  Both for the sake of accurate inference _and_
       efficiency, the brain ought to care about these changes.
+    * Evidence that it does: **adaptation** is pervasive in the brain and
+      behavior.
+    * Inference at a higher level: about the _distributions_ of stimuli.
