@@ -125,6 +125,20 @@ My research focuses on these issues in one particular domain: speech
 perception.
 
 
+## Link between neural adaptation and distributional learning
+
+If _neural adaptation_ is adaptation to _statistical_ properties of the world
+(distributional learning), then what are the limits on this?  Are there some
+sets of statistics that a neural population are better able adapt to.  Surely it
+seems plausible that there are changes you _can't_ adapt to.
+
+We can apply the same logic about fitting to the statistics of the world here,
+too, at this higher level.  Again, two parts: efficiency and inference.  Need to
+be able to represent information in the world, including variable statistics,
+given limited resources.  And if we know what statistics are more or less likely
+in this world, then we assign higher probability to those statistics when they
+do come.
+
 
 # Outline
 
