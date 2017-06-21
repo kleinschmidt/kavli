@@ -139,15 +139,71 @@ given limited resources.  And if we know what statistics are more or less likely
 in this world, then we assign higher probability to those statistics when they
 do come.
 
+## Dilemma: does it make sense to link inference and efficiency in neural pop.s?
+
+People might rightly wonder how you'd do inference given a heterogeneous
+population of neurons that are efficiently allocated.  For a continuous
+population there are lots of ways to do it (any of the PPC readout schemes would
+work, right?).  For a discrete thing, I think you can connect with
+DDMs/sequential sampling: you're getting a little evidence for or against a
+particular explanation.  **Ask mike about this?**
+
+The big Q here is whether to highlight the parallels up front, or come back
+around at the end in a "link to brain function" bit at the end.  I'm now kind of
+leaning in that direction (tie back at the end).  Could make a list of things
+that apply to accurate inference, and just replace with efficient processing.
+Or point out the link in general at the end.
+
+## Figures
+
+### Major orienting figure: cartoon diagram
+
+    x   --> p(r|x) --> p(x|r) \propto p(x|r) p(r)
+  world      neural   inference
+features   responses
+
+want to help people get a sense of how these things fit together (and ground
+symbol use).  But I'm not sure this is the best way to do it...
+
+## Coming back around to _goals_
+
+Where do I want people to end up?  Basically to realize that there's a tight
+(conceptual) link between adaptation and prediction _in general_, and in
+particular for understanding the organization and function of the brain.  My
+hook is that **prediction isn't just guessing the next word**.  I want to talk
+about the deep importance of prediction for dealing with the intrinsic
+variability---and uncertainty---of the world.  (Prediction error ties in nicely
+with the second week).
+
+And, equally important, that adaptation involves prediction at many levels.
+This makes understanding the neural circuits super hard.
+
+I could frame the motivation as motivating a link between brain
+function/organization and the high level computational perspective on the
+inference processes.  Then I'm going to focus on modeling/understanding the
+computational issues.
+
+Computational level: inference intimately involves predictions.  And adaptation
+involves prediction in two critical ways.  First, can look at it as reducing the
+prediction error by learning the statistical properties of the world.  Second,
+it is itself an inference process, involving combining prior expectations about
+what distributions you think are likely with what's consistent with the data you
+observe.
 
 # Outline
 
 * Intro and motivation
-    * Why does the brain care about statistics?
-        * Computational level: inference (speech as example, focus on
-          prediction)
-        * Implementation level: efficiency (allocate time, space, energy)
+    * Adaptation is pervasive in the brain and in behavior, across many many
+      time scales and domains.  (say that I'm focusing on speech here?)
+    * Why does the brain adapt?  Or, _what_ is adaptation?  (Very much up in the
+      air) **WHAT DOES IT MEAN**
+        * ...because the statistics of the world change.
+        * well that begs the question: why should the brain care about the
+          statistics of the world in the first place?
+    * Computational level: inference (speech as example, focus on prediction)
+    * Implementation level: efficiency (allocate time, space, energy)
     * There's a deep connection between inference and efficiency considerations:
+      (maybe make this real quick)
         * quantify efficiency as mutual information between the stimulus (which
           is a fact about the world) and neural population response (which is
           all that you have to go on).
@@ -155,10 +211,35 @@ do come.
           potentially informative things (don't cover that part of stimulus
           space), or you're going to allocate a lot of resources to things that
           aren't very informative (they're complementary).
-* _Which_ statistics does the brain care about?
-    * "Statistics of the world" are **non-stationary**: change from one
-      situation to the another.  Both for the sake of accurate inference _and_
-      efficiency, the brain ought to care about these changes.
-    * Evidence that it does: **adaptation** is pervasive in the brain and
-      behavior.
-    * Inference at a higher level: about the _distributions_ of stimuli.
+    * Adaptation is _distributional learning_, which is an _inference_ at a
+      higher level.
+* Inference and prediction
+    * Speech perception as an example.
+    * Categories are variable.  How do you interpret a particular cue value?
+    * You look at how well each of the possible interpretations _predicts_ that
+      value (relative to the other possibilities).
+    * In a bayesian framework, we call those predictions the likelihood
+    * flag **FELDMAN** and **CLAYARDS** (among others)
+    * (idea of generative model, parametrized)
+    * punchline: statistically optimal inferences depend on predictions of
+      "lower level" features by "higher level"
+* Adaptation and prediction
+    * critical piece here: accurate inference depends on knowing the
+      distributions.
+    * those distributions, as a general rule, are not always the same.  SPeech
+      is particularly susceptible to this (lack of invariance)
+    * we've known for nearly 20 years now that people deal with this by learning
+      abuot particular talkers (Nygaard).  
+    * Now slides on recalibration: this learning can be __very
+      rapid__. ...boundary shift. ((( does this order of things make sense?
+      maybe want to jump straight to dist learning? but going to have to explain
+      the paradigm anyway )))
+    * learning distributions explains this. (walk through logic)
+    * this distributional learning is an _inference process_, where you're
+      trying to reduce your prediction error (animation)
+* Predictions about _distributions_
+* Circle back around to the brain
+    * Close connection between adaptation to improve inference and to improve
+      efficiency.  (ganguli & simoncelli)
+    * Evidence that adaptation does improve the mutual information between
+      population firing rates and stimulus ensemble.
