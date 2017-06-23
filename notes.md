@@ -203,7 +203,8 @@ observe.
     * Computational level: inference (speech as example, focus on prediction)
     * Implementation level: efficiency (allocate time, space, energy)
     * There's a deep connection between inference and efficiency considerations:
-      (maybe make this real quick)
+      (maybe make this real quick, say I'll come back to at the end if there's
+      time)
         * quantify efficiency as mutual information between the stimulus (which
           is a fact about the world) and neural population response (which is
           all that you have to go on).
@@ -214,8 +215,11 @@ observe.
     * Adaptation is _distributional learning_, which is an _inference_ at a
       higher level.
 * Inference and prediction
-    * Speech perception as an example.
-    * Categories are variable.  How do you interpret a particular cue value?
+    * Speech perception as an example: how do you know what someone's said?
+    * Categories are variable.  You can't just look at the spectrogram, read off
+      a few cue values, and know for sure.  Best you can do is figure out how
+      _likely_ each category is as an explanation.  In order to do that, you
+      need to know the distributions, or the _generative model_.
     * You look at how well each of the possible interpretations _predicts_ that
       value (relative to the other possibilities).
     * In a bayesian framework, we call those predictions the likelihood
@@ -230,15 +234,54 @@ observe.
       is particularly susceptible to this (lack of invariance)
     * we've known for nearly 20 years now that people deal with this by learning
       abuot particular talkers (Nygaard).  
-    * Now slides on recalibration: this learning can be __very
+    * Now slides on recalibration/sel.ad.: this learning can be __very
       rapid__. ...boundary shift. ((( does this order of things make sense?
       maybe want to jump straight to dist learning? but going to have to explain
       the paradigm anyway )))
-    * learning distributions explains this. (walk through logic)
-    * this distributional learning is an _inference process_, where you're
-      trying to reduce your prediction error (animation)
+    * learning distributions explains this. (walk through logic, focus on
+      decreasing **prediction error**)
+    * (as an aside: why not just learn the boundary? 
+        * one obvious (and probably wrong) reaosn is that you need feedback
+          about whether your estimate of the boundary is right.  but that might
+          not necessarily be true, and there's often _implicitly_ information
+          about what cateogry a person is trying to say.
+        * a deeper reason is that the boundary doesn't predict which sounds you
+          should actually hear, and so you don't get any prediction error which
+          can guide learning.  most sounds are not near the boundary. if
+          you're willing to make some commitments about what these distributions
+          look like, you can get information about the distribution from _every_
+          observation you make.  You also get earlier signals that you need to
+          update your beliefs, since you don't necessarily need to make a
+          _mistake_ in order to pick up on the fact that your beliefs aren't
+          quite right.
 * Predictions about _distributions_
+    * Big question here is where does belief updating _start_?
+    * We can model this distributional learning as an _inference process_:
+      (bayes rule: conditioned on parameters)  to make math work out we need to
+      _condition_ on the parameters of the generative model.  What do these look
+      like?  Think of them as a big vector of all the means, variances, etc. of
+      the different cue distributions.
+    * Now the logic of belief updating is just the same: we've been over this
+      intuitively, but you just ask "how well does this hypothetical generative
+      model predict the data I've seen?".
+* What can we do with this?
+    * At a high level, gives us a framework for reasoning about how people
+      structure their previous experience with other contexts.
+    * More specifically, it provides a (qualitative) account of the wide range
+      of behavior findings on how people handle talker variability, from rapid
+      adaptation to long-term, persistent representaitons of specific familiar
+      talkers.
+    * Drilling down even further: it gives us things we can _measure_ from
+      speech from many different talkers in order to make predictions about
+      listeners' behavior at different levels.
+    * It also simultaneously posits a bunch of specific knowledge that listeners
+      (implicitly or explicitly) use to guide their adaptation **and** provides
+      a way for us to probe that knowledge.  I'll talk a little more about that
+      because it's a really interesting example of the benefits of bayesian
+      models.
+* Bayesian mind reading
 * Circle back around to the brain
+    * Efficient coding
     * Close connection between adaptation to improve inference and to improve
       efficiency.  (ganguli & simoncelli)
     * Evidence that adaptation does improve the mutual information between
