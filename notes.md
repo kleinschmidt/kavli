@@ -214,6 +214,11 @@ observe.
           aren't very informative (they're complementary).
     * Adaptation is _distributional learning_, which is an _inference_ at a
       higher level.
+    * What does this have to do with **prediction**?
+        * probabilistic predictions allow you to do inference
+        * ...including inferring how to make _better_ predictions in the future
+          (and hence better inferences).
+        * GOing to show you how this logic works for speech perception.
 * Inference and prediction
     * Speech perception as an example: how do you know what someone's said?
     * Categories are variable.  You can't just look at the spectrogram, read off
@@ -231,15 +236,29 @@ observe.
     * critical piece here: accurate inference depends on knowing the
       distributions.
     * those distributions, as a general rule, are not always the same.  SPeech
-      is particularly susceptible to this (lack of invariance)
-    * we've known for nearly 20 years now that people deal with this by learning
-      abuot particular talkers (Nygaard).  
+      is particularly susceptible to this (lack of invariance) but it's true in
+      general.
+    * we've known for nearly 20 years now that people deal with this by
+      _learning_ abuot particular talkers (Nygaard)...
     * Now slides on recalibration/sel.ad.: this learning can be __very
       rapid__. ...boundary shift. ((( does this order of things make sense?
       maybe want to jump straight to dist learning? but going to have to explain
       the paradigm anyway )))
     * learning distributions explains this. (walk through logic, focus on
-      decreasing **prediction error**)
+      decreasing **prediction error** and the qualitative changes in beliefs you
+      expect.)
+* modeling this: 
+    * it's inference! inference about _distributions_.  We don't know the
+      mean/variance because they can vary.  The logic is exactly the same: you
+      have some prior beliefs, and combine them with data based on how well they
+      predict the data.
+        * Animation here of the particle filter flavored thing.
+    * actually doing it:
+        * prior distributions, that we estimate based on pre-training
+          classification functions
+        * free parameters: how strong are your priors?
+        * run this model through the experiment.
+        * results.
     * (as an aside: why not just learn the boundary? 
         * one obvious (and probably wrong) reaosn is that you need feedback
           about whether your estimate of the boundary is right.  but that might
@@ -255,15 +274,12 @@ observe.
           _mistake_ in order to pick up on the fact that your beliefs aren't
           quite right.
 * Predictions about _distributions_
-    * Big question here is where does belief updating _start_?
-    * We can model this distributional learning as an _inference process_:
-      (bayes rule: conditioned on parameters)  to make math work out we need to
-      _condition_ on the parameters of the generative model.  What do these look
-      like?  Think of them as a big vector of all the means, variances, etc. of
-      the different cue distributions.
-    * Now the logic of belief updating is just the same: we've been over this
-      intuitively, but you just ask "how well does this hypothetical generative
-      model predict the data I've seen?".
+    * modeling this as inference reveals an interesting question: where does
+      belief udpating _start_??  Where does the prior come from?  In the last
+      model we basically treated it as a free parameter.
+    * But what priors _should_ you use?? In a way, the prior is a prediction
+      about distributions you expect to see.  You want those predictions to be
+      as good as possible, because otherwise your inference will be hard.
 * What can we do with this?
     * At a high level, gives us a framework for reasoning about how people
       structure their previous experience with other contexts.
@@ -280,6 +296,10 @@ observe.
       because it's a really interesting example of the benefits of bayesian
       models.
 * Bayesian mind reading
+    * Prior experience guides adaptation by _constraining_ the possible
+      distribution that you consider.
+    * WHen you get something that you've ruled out, you're going to have trouble
+      adapting to it.
 * Circle back around to the brain
     * Efficient coding
     * Close connection between adaptation to improve inference and to improve
