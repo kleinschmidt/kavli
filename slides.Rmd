@@ -1,0 +1,22 @@
+---
+author: "Dave F. Kleinschmidt"
+affiliation: "Princeton Neuroscience Institute"
+title: "Prediction and adaptation"
+output: 
+  revealjs::revealjs_presentation:
+    self_contained: false
+    keep_md: true
+    transition: none
+    background_transition: none
+    reveal_options:
+      center: true
+      history: true
+      notes: true
+
+---
+
+# Adaptation is ubiquitous
+
+```{r}
+
+```
