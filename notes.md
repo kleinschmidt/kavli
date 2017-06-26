@@ -219,6 +219,17 @@ observe.
         * ...including inferring how to make _better_ predictions in the future
           (and hence better inferences).
         * GOing to show you how this logic works for speech perception.
+        * and present some evidence that people are doing something like this.
+* Speech perception, inference, and prediction
+    * How do you make sense out of spoken language? (big stack figure)
+    * Decompose into spectrogram -> extract some kind of cues from that (cochlea).
+    * But then how do you know how to interpret those cue values?  Well maybe
+      there's a big lookup table in your brain and you just read off the phoneme
+      for the cue value.
+    * (This is basically what people thought the story would look like in the
+      early days. speech is "easy")
+    * Problem: **variability** (distributions) means that it's a problem of
+      **inference under uncertainty**.
 * Inference and prediction
     * Speech perception as an example: how do you know what someone's said?
     * Categories are variable.  You can't just look at the spectrogram, read off
@@ -238,8 +249,10 @@ observe.
     * those distributions, as a general rule, are not always the same.  SPeech
       is particularly susceptible to this (lack of invariance) but it's true in
       general.
+        * ((( distributions and category boundaries )))
     * we've known for nearly 20 years now that people deal with this by
-      _learning_ abuot particular talkers (Nygaard)...
+      _learning_ abuot particular talkers (Nygaard)...rapidly get better
+      (faster, more accurate) at understanding unfamiliar speech.
     * Now slides on recalibration/sel.ad.: this learning can be __very
       rapid__. ...boundary shift. ((( does this order of things make sense?
       maybe want to jump straight to dist learning? but going to have to explain
@@ -247,13 +260,16 @@ observe.
     * learning distributions explains this. (walk through logic, focus on
       decreasing **prediction error** and the qualitative changes in beliefs you
       expect.)
+    * Present model results and data really quickly
 * modeling this: 
     * it's inference! inference about _distributions_.  We don't know the
       mean/variance because they can vary.  The logic is exactly the same: you
       have some prior beliefs, and combine them with data based on how well they
       predict the data.
+        * Bayes rule
         * Animation here of the particle filter flavored thing.
     * actually doing it:
+        * (( meh actually not... ))
         * prior distributions, that we estimate based on pre-training
           classification functions
         * free parameters: how strong are your priors?
@@ -280,6 +296,10 @@ observe.
     * But what priors _should_ you use?? In a way, the prior is a prediction
       about distributions you expect to see.  You want those predictions to be
       as good as possible, because otherwise your inference will be hard.
+        * ((( animations of belief updating?? )))
+    * 
+    
+    
 * What can we do with this?
     * At a high level, gives us a framework for reasoning about how people
       structure their previous experience with other contexts.
@@ -287,6 +307,7 @@ observe.
       of behavior findings on how people handle talker variability, from rapid
       adaptation to long-term, persistent representaitons of specific familiar
       talkers.
+        * ((( big slide of references here )))
     * Drilling down even further: it gives us things we can _measure_ from
       speech from many different talkers in order to make predictions about
       listeners' behavior at different levels.
@@ -296,13 +317,27 @@ observe.
       because it's a really interesting example of the benefits of bayesian
       models.
 * Bayesian mind reading
-    * Prior experience guides adaptation by _constraining_ the possible
-      distribution that you consider.
-    * WHen you get something that you've ruled out, you're going to have trouble
-      adapting to it.
+    * In order for your predictions to be useful there's a tradeoff: in order ot
+      allocate probaiblity to things that are likely to occur (and that you
+      should be prepared for), you have to take probability away from other,
+      less likely possiblities.  This means that there are going ot be things
+      that are hard (if not impossible) for you to adapt to.
+    * Shwo you one study where we find evidence for exactly this kind of
+      constraint on rapid adaptation.
+    * A really cool thing we can do is 
 * Circle back around to the brain
     * Efficient coding
     * Close connection between adaptation to improve inference and to improve
       efficiency.  (ganguli & simoncelli)
     * Evidence that adaptation does improve the mutual information between
       population firing rates and stimulus ensemble.
+
+
+* brain study
+    * People who are working on this.
+    * There are at least NNN parts of this picture:
+        * How you learn _new_ models
+        * How you retrieve and update _existing_ models
+        * How you learn, represent, and deploy structure of _groups_ of talkers
+    * my work is starting to address how you learn new models.
+    * ((( link to high level vs. low level locus )))

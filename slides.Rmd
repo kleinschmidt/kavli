@@ -17,6 +17,8 @@ output:
 
 ```{r}
 
+knitr::opts_chunk$set(cache=TRUE)
+
 library(tidyverse)
 library(magrittr)
 
@@ -90,12 +92,12 @@ fit_inc <- readRDS("fit_inc.rds")
 samples <- rstan::extract(fit_inc)
 
 
-most_block_samples <-
-  extract_updated_samples(fit_inc, c("b", "p"), levels(d$bvotCond)) %>%
-  filter(block %in% seq(1, 10, by=3)) %>%
-  group_by(block) %>%
-  nest() %>%
-  unnest(map(data, beliefupdatr:::updated_samples_predict_lhood, x=seq(-40, 100, by=5)))
+## most_block_samples <-
+##   extract_updated_samples(fit_inc, c("b", "p"), levels(d$bvotCond)) %>%
+##   filter(block %in% seq(1, 10, by=3)) %>%
+##   group_by(block) %>%
+##   nest() %>%
+##   unnest(map(data, beliefupdatr:::updated_samples_predict_lhood, x=seq(-40, 100, by=5)))
   
 lapse_rates <-
   rstan::extract(fit_inc) %>%
@@ -104,21 +106,21 @@ lapse_rates <-
 
 
 
-block10_samples <-
+block10_samples_pred <-
   extract_updated_samples(fit_inc, c("b", "p"), levels(d$bvotCond)) %>%
   filter(block==max(block)) %>%
-  beliefupdatr::updated_samples_predict_lhood(seq(-40, 100, by=5))
+  beliefupdatr:::updated_samples_predict_lhood(seq(-40, 100, by=5))
 
-most_block_dat <-
+block910_dat <-
   d %>%
-  mutate(block= ntile(trial, 10)) %>%
-  filter(block %in% unique(most_block_samples$block)) %>%
+  mutate(block= ntile(trial, 5)) %>%
+  filter(block == max(block)) %>%
   group_by(block, subject, vot) %>%
   mutate(resp_p = mean(respCat == "p"),
          group = bvotCond)
 
-most_block_class_summary <-
-  most_block_samples %>%
+block10_class_summary <-
+  block10_samples_pred %>%
   spread(category, pred) %>%
   left_join(lapse_rates) %>%
   mutate(prob_p = p / (p+b),
@@ -127,14 +129,26 @@ most_block_class_summary <-
   summarise_each(funs(med=median, low=quantile(., 0.25), high=quantile(., 0.75)),
                  prob_p_lapse)
 
-most_block_class_summary %>%
+```
+
+```{r model-fits, fig.width=8, fig.height=2}
+
+
+block10_class_summary %>%
   ggplot(aes(x=x, y=med, color=group, fill=group)) +
   geom_ribbon(aes(ymin=low, ymax=high), alpha=0.2, color=NA) +
   geom_line() +
-  geom_pointrange(data=most_block_dat, aes(x = vot, y=resp_p), stat='summary', fun.data='mean_cl_boot') +
+  geom_pointrange(data=block910_dat, aes(x = vot, y=resp_p), stat='summary', fun.data='mean_cl_boot') +
   facet_grid(block~group)
 
-# facet by 
+
+```
+
+
+
+```{r , fig.width=8, fig.height=2, eval=FALSE}
+
+# facet by condition
 most_block_dat %>%
   ggplot(aes(x=vot, y=resp_p, color=group, alpha=block, group=interaction(group, block))) +
   geom_point(stat='summary', fun.y=mean) +
@@ -166,3 +180,4 @@ most_block_dat %>%
   facet_grid(.~block)
 
 ```
+
