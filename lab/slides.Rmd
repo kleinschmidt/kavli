@@ -11,6 +11,8 @@ output:
 ```{r preamble, output="hide", echo=FALSE}
 
 library(tidyverse)
+library(purrrlyr)
+## devtools::install_github("kleinschmidt/beliefupdatr", agrs="--preclean")
 library(beliefupdatr)
 
 knitr::opts_chunk$set(cache=TRUE, echo=FALSE, message=FALSE, error=FALSE)
@@ -70,8 +72,8 @@ p +
 
 ```{r}
 
-prior <- list(b = nix2_params(mu = 10, sigma2 = 43, kappa = 10, nu = 10),
-              p = nix2_params(mu = 52, sigma2 = 460, kappa = 10, nu = 10))
+prior <- list(b = nix2_params(mu = 10, sigma2 = 43, kappa = 3, nu = 10),
+              p = nix2_params(mu = 52, sigma2 = 460, kappa = 3, nu = 10))
 
 
 xs <- seq(-20, 120)
@@ -90,24 +92,204 @@ p <-
   prior_pred %>%
   ggplot(aes(x=vot, color=category)) +
   geom_line(aes(y=lhood)) +
-  ggtitle("Predictions from prior beliefs")
+  ggtitle("Predictions from prior beliefs") +
+  ylim(-0.0025, 0.055)
+p
+
 ```
 
 ---
 
-```{r}
+```{r, dependson=-1}
 one_dat <- data_frame(vot = 42, category="p")
-p + geom_rug(data=one_dat)
+p + geom_rug(data=one_dat) + ggtitle("Observed data point")
+
 ```
 
 ---
 
-```{r}
+```{r, dependson=-1}
+## updated_beliefs <- map(prior['p'], nix2_update_one, one_dat$vot)
 updated_beliefs <- update_list(prior, p = nix2_update_one(prior$p, one_dat$vot))
 post_pred <- updated_beliefs %>% predict(xs)
+ggplot(prior_pred, aes(x=vot, color=category)) +
+  geom_line(aes(y=lhood), alpha=0.5, linetype=3) +
+  geom_line(data=post_pred, aes(y=lhood)) +
+  geom_rug(data=one_dat) +
+  ggtitle("Updated beliefs after one observation")
 
 ```
 
+## How??
+
+![Why, god](posterior0.png)
+
+## How???
+
+![Why, god.](posterior1.png)
+
+## How????
+
+![Why, god..](posterior2.png)
+
+## Enough
+
+* Working with the distribution directly is **hard**.
+* Neither **researchers** nor **brains** want to do a lot of algebra.
+* What if there was a better way?!
+* Replace continuous **distribution** $p(\mu, \sigma^2)$ with **samples** of plausible hypotheses.
+* Re-weight samples based on how well they predict the data
+
+## One sample of prior $p(\mu,\sigma^2)$
+
+```{r}
+
+draw_samples <- function(beliefs, n) {
+  map2(beliefs, names(beliefs),
+       ~ r_nix2(n, .x) %>%
+         as_data_frame() %>%
+         mutate(category=.y,
+                sample = row_number(),
+                weight = 1/n)) %>%
+    lift(bind_rows)()
+}
+
+pred_samples <- function(samples, xs) {
+  samples %>%
+    as_data_frame() %>%
+    mutate(pred = map2(mean, variance,
+                       ~ data_frame(vot = xs,
+                                    lhood = dnorm(vot, mean=.x, sd=sqrt(.y))))) %>%
+    unnest(pred)
+}
+
+prior %>%
+  draw_samples(1) %>%
+  pred_samples(xs) %>%
+  ggplot(aes(x=vot, y=lhood, color=category)) +
+  geom_line() +
+  ylim(0, 0.09)
+```
+
+## Many samples approximate $p(\mu,\sigma^2)$
+
+```{r}
+
+prior_samples <- 
+  prior %>%
+  draw_samples(100)
+
+
+prior_samples_pred <-
+  prior_samples %>%
+  pred_samples(xs)
+
+prior_samples_pred_marg <-
+  prior_samples_pred %>%
+  group_by(vot, category) %>%
+  summarise(lhood = mean(lhood))
+
+p <- ggplot(prior_samples_pred,
+       aes(x=vot, y=lhood, color=category)) +
+  geom_line(aes(group=interaction(sample, category)), alpha=0.2) +
+  ylim(0, 0.09)
+p
+```
+
+## Many samples approximate $p(\mu,\sigma^2)$
+
+```{r}
+prior_samples_pred_marg <-
+  prior_samples_pred %>%
+  group_by(vot, category) %>%
+  summarise(lhood = mean(lhood))
+
+p <- p +
+  geom_line(data=prior_samples_pred_marg, aes(linetype="Approx."), size=2) +
+  scale_linetype_discrete("Method")
+p  
+```
+
+## Many samples approximate $p(\mu,\sigma^2)$
+
+```{r}
+prior_samples_pred_marg <-
+  prior_samples_pred %>%
+  group_by(vot, category) %>%
+  summarise(lhood = mean(lhood))
+
+p + geom_line(data=prior_pred, aes(linetype="Exact"), size=2)
+```
+
+## Weighting samples by importance
+
+* How do you **update** samples to reflect new information?
+* Notation: for each category, there are $K$ samples of $(\mu_k, \sigma^2_k)$,
+  where $k = 1 \ldots K$.
+* Samples are all equally representative of prior, so have the same **initial
+  weight**: $w^k_0 = 1/K$.
+* Re-weight samples based on **likelihood** of data given that sample (how well
+  hypothesis predicts data): $$ w^k_n = w^k_0 p(x_1, \ldots, x_n | \mu_k, \sigma^2_k) $$
+
+----
+
+```{r}
+
+p <- ggplot(prior_samples_pred,
+       aes(x=vot, color=category)) +
+  geom_line(aes(y=lhood, group=interaction(sample, category), alpha=weight)) +
+  ylim(0, 0.09) + ggtitle("Prior samples")
+p
+```
+
+---
+
+```{r}
+
+p +  geom_rug(data=one_dat) + ggtitle("Prior samples with one observation")
+```
+
+---
+
+```{r}
+reweight_samples <- function(samples, x, x_category) {
+  samples %>%
+    mutate(lhood = map2_dbl(mean, variance, ~dnorm(x, mean=.x, sd=sqrt(.y))),
+           weight = ifelse(category == x_category, weight*lhood, weight)) %>%
+    group_by(category) %>%
+    mutate(weight = weight/sum(weight),
+           lhood = NULL) %>%
+    ungroup()
+}
+
+samples_one_post_pred <-
+  reweight_samples(prior_samples, one_dat$vot, "p") %>%
+  pred_samples(xs)
+
+p <- samples_one_post_pred %>%
+  ggplot(aes(x=vot, color=category)) +
+  geom_line(aes(y = lhood, alpha=weight, group=interaction(sample, category))) +
+  geom_rug(data=one_dat) +
+  ylim(0, 0.09) +
+  ggtitle("Re-weighted samples")
+p
+```
+
+---
+
+```{r}
+
+samples_post_one_pred_marg <-
+  samples_one_post_pred %>%
+  group_by(vot, category) %>%
+  summarise(weight = sum(weight), lhood = mean(weight*lhood))
+
+p + geom_line(data = samples_post_one_pred_marg,
+              aes(y=lhood, linetype="Approx."), size=2) +
+  geom_line(data=post_pred, aes(y=lhood, linetype="Exact"), size=2)
+
+
+```
 
 
 
