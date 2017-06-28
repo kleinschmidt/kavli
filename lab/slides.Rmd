@@ -8,7 +8,7 @@ output:
 ---
 
 
-```{r preamble, output="hide", echo=FALSE}
+```{r preamble, output="hide", echo=FALSE, message=FALSE, error=FALSE}
 
 library(tidyverse)
 library(purrrlyr)
@@ -91,18 +91,20 @@ prior_pred <- prior %>%
 p <-
   prior_pred %>%
   ggplot(aes(x=vot, color=category)) +
-  geom_line(aes(y=lhood)) +
+  geom_line(aes(y=lhood), size=2) +
   ggtitle("Predictions from prior beliefs") +
   ylim(-0.0025, 0.055)
-p
 
+p
 ```
 
 ---
 
 ```{r, dependson=-1}
 one_dat <- data_frame(vot = 42, category="p")
-p + geom_rug(data=one_dat) + ggtitle("Observed data point")
+p + geom_rug(data=one_dat) + ggtitle("Observed data point") +
+  ylim(-0.0025, 0.055)
+
 
 ```
 
@@ -113,24 +115,51 @@ p + geom_rug(data=one_dat) + ggtitle("Observed data point")
 updated_beliefs <- update_list(prior, p = nix2_update_one(prior$p, one_dat$vot))
 post_pred <- updated_beliefs %>% predict(xs)
 ggplot(prior_pred, aes(x=vot, color=category)) +
-  geom_line(aes(y=lhood), alpha=0.5, linetype=3) +
-  geom_line(data=post_pred, aes(y=lhood)) +
+  geom_line(aes(y=lhood)) +
+  geom_line(data=post_pred, aes(y=lhood), size=2) +
   geom_rug(data=one_dat) +
-  ggtitle("Updated beliefs after one observation")
+  ggtitle("Updated beliefs after one observation") +
+  ylim(-0.0025, 0.055)
 
 ```
 
-## How??
+---
+
+```{r, dependson=-1}
+
+some_dat <- data_frame(vot = c(42, rnorm(10, mean=40, sd=10)), category="p")
+updated_beliefs <- update_list(prior, p = nix2_update(prior$p, some_dat$vot))
+post_pred <- updated_beliefs %>% predict(xs)
+
+ggplot(prior_pred, aes(x=vot, color=category)) +
+  geom_line(aes(y=lhood)) +
+  geom_line(data=post_pred, aes(y=lhood), size=2) +
+  geom_rug(data=some_dat) +
+  ggtitle("Updated beliefs ...after more observations") +
+  ylim(-0.0025, 0.055)
+
+```
+
+
+# How??
+
+---
 
 ![Why, god](posterior0.png)
 
-## How???
+---
 
 ![Why, god.](posterior1.png)
 
-## How????
+---
 
 ![Why, god..](posterior2.png)
+
+---
+
+![](no.jpg)
+
+---
 
 ## Enough
 
@@ -192,21 +221,9 @@ prior_samples_pred_marg <-
 p <- ggplot(prior_samples_pred,
        aes(x=vot, y=lhood, color=category)) +
   geom_line(aes(group=interaction(sample, category)), alpha=0.2) +
-  ylim(0, 0.09)
-p
-```
-
-## Many samples approximate $p(\mu,\sigma^2)$
-
-```{r}
-prior_samples_pred_marg <-
-  prior_samples_pred %>%
-  group_by(vot, category) %>%
-  summarise(lhood = mean(lhood))
-
-p <- p +
-  geom_line(data=prior_samples_pred_marg, aes(linetype="Approx."), size=2) +
-  scale_linetype_discrete("Method")
+  ylim(0, 0.09) +
+  geom_line(data=prior_pred, aes(linetype=factor("Exact", levels=c("Approx.", "Exact"))), size=2) +
+  scale_linetype_discrete("Method", drop=FALSE)
 p  
 ```
 
@@ -218,7 +235,10 @@ prior_samples_pred_marg <-
   group_by(vot, category) %>%
   summarise(lhood = mean(lhood))
 
-p + geom_line(data=prior_pred, aes(linetype="Exact"), size=2)
+p <- p +
+  geom_line(data=prior_samples_pred_marg, aes(linetype="Approx."), size=2)
+p  
+
 ```
 
 ## Weighting samples by importance
@@ -252,9 +272,9 @@ p +  geom_rug(data=one_dat) + ggtitle("Prior samples with one observation")
 ---
 
 ```{r}
-reweight_samples <- function(samples, x, x_category) {
+reweight_samples <- function(samples, xs, x_category) {
   samples %>%
-    mutate(lhood = map2_dbl(mean, variance, ~dnorm(x, mean=.x, sd=sqrt(.y))),
+    mutate(lhood = map2_dbl(mean, variance, ~prod(dnorm(xs, mean=.x, sd=sqrt(.y)))),
            weight = ifelse(category == x_category, weight*lhood, weight)) %>%
     group_by(category) %>%
     mutate(weight = weight/sum(weight),
@@ -262,8 +282,10 @@ reweight_samples <- function(samples, x, x_category) {
     ungroup()
 }
 
+samples_one_post <-  reweight_samples(prior_samples, one_dat$vot, "p")
+
 samples_one_post_pred <-
-  reweight_samples(prior_samples, one_dat$vot, "p") %>%
+  samples_one_post %>%
   pred_samples(xs)
 
 p <- samples_one_post_pred %>%
@@ -279,85 +301,323 @@ p
 
 ```{r}
 
-samples_post_one_pred_marg <-
-  samples_one_post_pred %>%
-  group_by(vot, category) %>%
-  summarise(weight = sum(weight), lhood = mean(weight*lhood))
+samples_some_post <-  reweight_samples(prior_samples, some_dat$vot, "p")
 
-p + geom_line(data = samples_post_one_pred_marg,
-              aes(y=lhood, linetype="Approx."), size=2) +
+samples_some_post_pred <-
+  samples_some_post %>%
+  pred_samples(xs)
+
+p_some_post <- samples_some_post_pred %>%
+  ggplot(aes(x=vot, color=category)) +
+  geom_line(aes(y = lhood, alpha=weight, group=interaction(sample, category))) +
+  geom_rug(data=some_dat) +
+  ylim(0, 0.09) +
+  ggtitle("Re-weighted samples")
+p_some_post
+
+```
+
+
+---
+
+```{r}
+
+samples_post_some_pred_marg <-
+  samples_some_post_pred %>%
+  group_by(vot, category) %>%
+  summarise(lhood = sum(weight*lhood), weight = sum(weight))
+
+p_some_post +
+  geom_line(data = samples_post_some_pred_marg,
+            aes(y=lhood, linetype="Approx."), size=2) +
   geom_line(data=post_pred, aes(y=lhood, linetype="Exact"), size=2)
 
 
 ```
 
+## Doing things under uncertainty
+
+* Even if we don't know exactly the mean and variance, we still want to be able
+  to categorize things.
+* If we know the categories' means and variances, this is straightforward: $$ p(c = b | x) = \frac{p(x | \mu_b, \sigma^2_b)p(c=b)}{p(x | \mu_b, \sigma^2_b)p(c=b) + p(x | \mu_p, \sigma^2_p)p(c=p)} $$
+* But we don't know the means and variances!
+* Taking uncertainty about $\mu, \sigma^2$ into account requires **averaging**
+  over plausible values ("marginalizing" in Bayesian jargon).
+
+---
+
+$$
+\begin{align}
+  p(c=\mathrm{b} | x) =& \int \cdots \int d\mu_b d\mu_p d\sigma^2_b d\sigma^2_p \\
+  & \frac{p(x | \mu_b, \mu_p) p(c=b)}{p(x | \mu_b, \mu_p) p(c=b) + p(x | \mu_p, \mu_p) p(c=p)} \\ 
+  & p(\mu_b, \mu_p, \sigma^2_b, \sigma^2_p) 
+  \end{align}
+$$
+
+---
+
+![](no.jpg)
+
+---
+
+## Doing things under uncertainty...**with samples!**
+
+* An integral is really a weighted average!
+* So we can calculate the **category boundary for each sample**, and average them together.
+
+---
+
+```{r}
+
+sample_boundaries <- 
+  prior_samples_pred %>%
+  filter(10 <= vot,
+         vot <= 70) %>%
+  select(-mean, -variance, -weight) %>%
+  spread(category, lhood) %>%
+  mutate(prob_p = p / (b+p),
+         weight = 1/100)
+
+prior_bounds_marg <-
+  sample_boundaries %>%
+  group_by(vot) %>%
+  summarise(prob_p = mean(prob_p))
+  
+p <-
+  ggplot(sample_boundaries, aes(x=vot, y=prob_p)) +
+  geom_line(aes(group=sample, alpha=weight)) +
+  scale_alpha_continuous("Probability", range=c(0.1, 0.5)) +
+  ggtitle("Prior boundaries")
+p
+  
+```
+
+---
+
+```{r}
+prior_bounds_marg <-
+  sample_boundaries %>%
+  group_by(vot) %>%
+  summarise(prob_p = mean(prob_p))
+  
+p +
+  geom_line(data=prior_bounds_marg, size=2)
+```
 
 
-```{r, eval=FALSE}
+---
+
+```{r}
+
+weights_one <- samples_one_post %>%
+  filter(category=="p") %>%  # only updated /p/
+  select(sample, weight)
+
+post_one_bounds <- 
+  sample_boundaries %>%
+  select(-weight) %>%
+  left_join(weights_one)
+
+post_one_bounds_margs <-
+  post_one_bounds %>%
+  group_by(vot) %>%
+  summarise(prob_p = sum(prob_p*weight))
+
+ggplot(post_one_bounds, aes(x=vot)) +
+  geom_line(aes(y=prob_p, group=sample, alpha=weight)) +
+  geom_line(data=post_one_bounds_margs, aes(y=prob_p), size=2) +
+  geom_rug(data = one_dat) +
+  scale_alpha("Probability", range=c(0.1, 0.7)) +
+  ggtitle("Updated boundaries")
+
+```
 
 
 
+---
 
-dat <- supunsup::supunsup_clean %>%
-  filter(bvotCond == "0") %>%
-  filter(subject == first(subject)) %>%
-  select(trial, trueCat, vot) %>%
-  mutate(block = ntile(trial, 10))
+```{r}
 
+weights_some <- samples_some_post %>%
+  filter(category=="p") %>%  # only updated /p/
+  select(sample, weight)
 
-dat %>% group_by(block) %>% nest()
+post_some_bounds <- 
+  sample_boundaries %>%
+  select(-weight) %>%
+  left_join(weights_some)
 
+post_some_bounds_margs <-
+  post_some_bounds %>%
+  group_by(vot) %>%
+  summarise(prob_p = sum(prob_p*weight))
 
+ggplot(post_some_bounds, aes(x=vot)) +
+  geom_line(aes(y=prob_p, group=sample, alpha=weight)) +
+  geom_line(data=post_some_bounds_margs, aes(y=prob_p), size=2) +
+  geom_rug(data = some_dat) +
+  scale_alpha("Probability", range=c(0.1, 0.7)) +
+  ggtitle("Updated boundaries")
 
-
-xs <- seq(-20, 90)
-predict <- function(beliefs, xs) {
-  map2(beliefs, names(beliefs),
-       ~ data_frame(category = .y,
-                    vot = xs,
-                    likelihood = d_nix2_predict(xs, .x))) %>%
-    lift(bind_rows)()
-}
-
-tmp <-
-
-p <-   
-
-updated_params <-
-  dat %>%
-  beliefupdatr::belief_update_batch("vot", "trueCat", "trial", seq(23, 221, length.out=10),
-                                    prior) 
-
-updated_predictions <- 
-  updated_params %>%
-  unnest(map(beliefs, predict, xs))
-
-data_by_block <-
-  map(unique(updated_params$trial),
-      ~ dat %>% filter(trial <= .x) %>% mutate(trial=.x, category='trueCat')) %>%
-  lift(bind_rows)()
-
-ggplot(updated_predictions,
-       aes(x=vot, y=likelihood, color=category, alpha=trial, frame=trial,
-           group=interaction(category, trial))) +
-  geom_line() +
-  geom_point(data=data_by_block, aes(y=0, color=trueCat), position=position_jitter(h=0, w=10))
+```
+  
+---
 
 
+# Flexibility of sampling
+
+## What if category isn't known?
+
+---
+
+```{r}
+
+xtreme_dat <- data_frame(vot = c(42, rnorm(10, mean=25, sd=10)), category="p")
+samples_xtreme_post <-  reweight_samples(prior_samples, xtreme_dat$vot, "p")
+
+samples_xtreme_post_pred <-
+  samples_xtreme_post %>%
+  pred_samples(xs)
+
+p_xtreme_post <- samples_xtreme_post_pred %>%
+  ggplot(aes(x=vot, color=category)) +
+  geom_line(aes(y = lhood, alpha=weight, group=interaction(sample, category))) +
+  geom_rug(data=xtreme_dat) +
+  ylim(0, 0.09) +
+  ggtitle("Re-weighted samples (category known)")
+
+samples_post_xtreme_pred_marg <-
+  samples_xtreme_post_pred %>%
+  group_by(vot, category) %>%
+  summarise(lhood = sum(weight*lhood), weight = sum(weight))
+
+p_xtreme_post +
+  geom_line(data = samples_post_xtreme_pred_marg,
+            aes(y=lhood), size=2)
+
+```
+
+---
+
+```{r}
+
+weights_xtreme_cat_unknown <-
+  prior_samples %>% 
+  pred_samples(xtreme_dat$vot) %>%
+  group_by(sample, vot) %>%
+  summarise(lhood = sum(lhood)) %>%
+  summarise(lhood = prod(lhood)) %>%
+  transmute(sample, weight = lhood / sum(lhood))
+
+pred_xtreme_cat_unknown <-
+  prior_samples_pred %>%
+  select(-weight) %>%
+  left_join(weights_xtreme_cat_unknown)
+
+pred_xtreme_cat_unknown_marg <-
+  pred_xtreme_cat_unknown %>%
+  group_by(vot, category) %>%
+  summarise(lhood = sum(weight*lhood), weight = sum(weight))
+
+pred_xtreme_cat_unknown %>%
+  ggplot(aes(x=vot)) +
+  geom_line(aes(y=lhood, color=category, alpha=weight, group=interaction(category, sample))) +
+  geom_line(data = pred_xtreme_cat_unknown_marg,
+            aes(y=lhood, color=category), size=2) +
+  geom_rug(data=xtreme_dat) +
+  ggtitle("Re-weighted samples (category unknown)")
+
+```
+
+---
+
+```{r}
+
+pred_xtreme_cat_unknown %>%
+  ggplot(aes(x=vot)) +
+  ## geom_line(aes(y=lhood, color=category, alpha=weight, group=interaction(category, sample))) +
+  geom_line(data = pred_xtreme_cat_unknown_marg,
+            aes(y=lhood, color=category, linetype="Post. (unknown)")) +
+  geom_line(data = samples_post_xtreme_pred_marg,
+            aes(y=lhood, color=category, linetype="Post. (known)")) +
+  geom_line(data=prior_samples_pred_marg,
+            aes(y=lhood, color=category, linetype="Prior")) +
+  geom_rug(data=xtreme_dat) +
+  scale_linetype("") +
+  ggtitle("Prior vs. posterior, when category is known vs. unknown")
+
+```
+
+## Weird priors
+
+* Analytical inference relies on using a **conjugate prior** which can be very restrictive.
+* For normal distribution, means that uncertianty about mean depends on the category variance.
+* What if we're very confident about what the variance $\sigma^2$ but not the mean?
+
+---
+
+```{r}
+
+weird_prior_samples <- 
+  data_frame(mean = rnorm(100, prior$p$mu, 15),
+             variance = rnorm(100, prior$p$sigma2, 20),
+             category = "p",
+             sample = 1:100,
+             weight = 1/100) %>%
+  bind_rows(prior_samples %>% filter(category == 'b'))
 
 
-%>%
-  gather("category", "beliefs", -trial)
+weird_prior_pred <-
+  weird_prior_samples %>%
+  pred_samples(xs)
 
- %>%
-  mutate(predictions = map(beliefs, predict))
+weird_prior_samples_pred_marg <-
+  weird_prior_pred %>%
+  group_by(vot, category) %>%
+  summarise(lhood = mean(lhood))
+
+p <- ggplot(weird_prior_pred,
+       aes(x=vot, y=lhood, color=category)) +
+  geom_line(aes(group=interaction(sample, category)), alpha=0.2) +
+  geom_line(data=weird_prior_samples_pred_marg, size=2) +
+  ylim(0, 0.09)
+p
+
+```
+
+---
+
+```{r}
 
 
-true_dists <- list(b = list(mu = 0, sigma2 = 70),
-                   p = list(mu = 40, sigma2 = 70))
+weird_some_post_pred <-
+  weird_prior_samples %>%
+  reweight_samples(some_dat$vot, "p") %>%
+  pred_samples(xs)
 
-data <- data_frame(trial = 1:
+weird_some_post_pred_marg <-
+  weird_some_post_pred %>%
+  group_by(vot, category) %>%
+  summarise(lhood = sum(weight*lhood))
 
+p <- weird_some_post_pred %>%
+  ggplot(aes(x=vot, color=category)) +
+  geom_line(aes(y = lhood, alpha=weight, group=interaction(sample, category))) +
+  geom_rug(data=some_dat) +
+  ylim(0, 0.09) +
+  ggtitle("Re-weighted samples")
+p
 
 
 ```
+
+---
+
+```{r}
+
+p +
+  geom_line(data = weird_some_post_pred_marg,
+            aes(y=lhood), size=2)
+
+```
+
