@@ -1,49 +1,13 @@
----
-title: "Approximate inference with sampling"
-author: "Dave Kleinschmidt"
-output: 
-    revealjs::revealjs_presentation:
-        transition: none
-        theme: default
-        css: slides.css
-        incremental: true
-    github_document:
-        html_preview: true
----
+Approximate inference with sampling
+================
+Dave Kleinschmidt
 
+What does it mean to sample from a distribution?
+================================================
 
-```{r preamble, output="hide", echo=FALSE, message=FALSE, error=FALSE}
-knitr::opts_chunk$set(cache=TRUE, message=FALSE, error=FALSE)
-if (knitr::opts_knit$get("rmarkdown.pandoc.to") == "revealjs") {
-  knitr::opts_chunk$set(echo=FALSE)
-}
+------------------------------------------------------------------------
 
-set.seed(1)
-```
-
-R code is available on [https://github.com/kleinschmidt/kavli](https://github.com/kleinschmidt/kavli)
-
-Slides: [davekleinschmidt.com/kavli/lab/slides.html](http://davekleinschmidt.com/kavli/lab/slides.html)
-
-Notebook (code+output): [davekleinschmidt.com/kavli/lab/slides_notebook.html](http://davekleinschmidt.com/kavli/lab/slides_notebook.html)
-
-
-```{r , echo=TRUE, cache=FALSE}
-
-library(tidyverse)
-library(purrrlyr)
-
-## install.packages("devtools")
-## devtools::install_github("kleinschmidt/beliefupdatr", agrs="--preclean")
-library(beliefupdatr)
-
-```
-
-# What does it mean to sample from a distribution?
-
----
-
-```{r}
+``` r
 p <- data_frame(vot = seq(-20, 120),
            lhood = dnorm(vot, mean=60, sd=21)) %>%
   ggplot(aes(x=vot)) +
@@ -52,44 +16,53 @@ p <- data_frame(vot = seq(-20, 120),
 p
 ```
 
----
+![](slides_files/figure-markdown_github/unnamed-chunk-1-1.png)
 
-```{r}
+------------------------------------------------------------------------
+
+``` r
 vot_samples <- data_frame(vot=rnorm(100, mean=60, sd=21))
 p + geom_rug(data=vot_samples) +
   ggtitle("Samples drawn from distribution")
 ```
 
----
+![](slides_files/figure-markdown_github/unnamed-chunk-2-1.png)
 
-```{r}
+------------------------------------------------------------------------
+
+``` r
 p +
   geom_rug(data=vot_samples) +
   geom_histogram(data=vot_samples, aes(y=..density..), alpha=0.5) +
   ggtitle("Histogram of samples approximates distribution")
 ```
 
-# Updating beliefs
+![](slides_files/figure-markdown_github/unnamed-chunk-3-1.png)
 
-## Quantifying uncertainty
+Updating beliefs
+================
 
-* We have two categories /b/ and /p/.  
-* Realized as normal distributions on an acoustic cue $$ p(\mathrm{VOT} | \mu, \sigma^2) $$
-* We **don't know** the mean $\mu$ and variance $\sigma^2$.
-* Express our uncertainty as a **probability distribution** over the mean and
-  variance: $$p(\mu, \sigma^2)$$
-* This distribution assigns a **degree of belief** for each particular
-  combination of mean $\mu$ and variance $\sigma^2$.
+Quantifying uncertainty
+-----------------------
 
-## Learning from experience
+-   We have two categories /b/ and /p/.
+-   Realized as normal distributions on an acoustic cue
+    *p*(*V**O**T*|*μ*, *σ*<sup>2</sup>)
+-   We **don't know** the mean *μ* and variance *σ*<sup>2</sup>.
+-   Express our uncertainty as a **probability distribution** over the mean and variance:
+    *p*(*μ*, *σ*<sup>2</sup>)
+-   This distribution assigns a **degree of belief** for each particular combination of mean *μ* and variance *σ*<sup>2</sup>.
 
-* How do we **update our beliefs** based on experience?
-* **Conceptually**, Bayes Rule: $$ p(\mu, \sigma^2 | x) \propto p(\mathrm{VOT}=x | \mu, \sigma^2) p(\mu, \sigma^2) $$
+Learning from experience
+------------------------
 
----
+-   How do we **update our beliefs** based on experience?
+-   **Conceptually**, Bayes Rule:
+    *p*(*μ*, *σ*<sup>2</sup>|*x*)∝*p*(*V**O**T* = *x*|*μ*, *σ*<sup>2</sup>)*p*(*μ*, *σ*<sup>2</sup>)
 
-```{r}
+------------------------------------------------------------------------
 
+``` r
 prior <- list(b = nix2_params(mu = 10, sigma2 = 43, kappa = 3, nu = 10),
               p = nix2_params(mu = 52, sigma2 = 460, kappa = 3, nu = 10))
 
@@ -116,19 +89,21 @@ p <-
 p
 ```
 
----
+![](slides_files/figure-markdown_github/unnamed-chunk-4-1.png)
 
-```{r, dependson=-1}
+------------------------------------------------------------------------
+
+``` r
 one_dat <- data_frame(vot = 42, category="p")
 p + geom_rug(data=one_dat) + ggtitle("Observed data point") +
   ylim(-0.0025, 0.055)
-
-
 ```
 
----
+![](slides_files/figure-markdown_github/unnamed-chunk-5-1.png)
 
-```{r, dependson=-1}
+------------------------------------------------------------------------
+
+``` r
 ## updated_beliefs <- map(prior['p'], nix2_update_one, one_dat$vot)
 updated_beliefs <- update_list(prior, p = nix2_update_one(prior$p, one_dat$vot))
 post_pred <- updated_beliefs %>% predict(xs)
@@ -138,13 +113,13 @@ ggplot(prior_pred, aes(x=vot, color=category)) +
   geom_rug(data=one_dat) +
   ggtitle("Updated beliefs after one observation") +
   ylim(-0.0025, 0.055)
-
 ```
 
----
+![](slides_files/figure-markdown_github/unnamed-chunk-6-1.png)
 
-```{r, dependson=-1}
+------------------------------------------------------------------------
 
+``` r
 some_dat <- data_frame(vot = c(42, rnorm(10, mean=40, sd=10)), category="p")
 updated_beliefs <- update_list(prior, p = nix2_update(prior$p, some_dat$vot))
 post_pred <- updated_beliefs %>% predict(xs)
@@ -155,42 +130,44 @@ ggplot(prior_pred, aes(x=vot, color=category)) +
   geom_rug(data=some_dat) +
   ggtitle("Updated beliefs ...after more observations") +
   ylim(-0.0025, 0.055)
-
 ```
 
+![](slides_files/figure-markdown_github/unnamed-chunk-7-1.png)
 
-# How??
+How??
+=====
 
----
+------------------------------------------------------------------------
 
 ![Why, god](posterior0.png)
 
----
+------------------------------------------------------------------------
 
 ![Why, god.](posterior1.png)
 
----
+------------------------------------------------------------------------
 
 ![Why, god..](posterior2.png)
 
----
+------------------------------------------------------------------------
 
 ![](no.jpg)
 
----
+------------------------------------------------------------------------
 
-## Enough
+Enough
+------
 
-* Working with the distribution directly is **hard**.
-* Neither **researchers** nor **brains** want to do a lot of algebra.
-* What if there was a better way?!
-* Replace continuous **distribution** $p(\mu, \sigma^2)$ with **samples** of plausible hypotheses.
-* Re-weight samples based on how well they predict the data
+-   Working with the distribution directly is **hard**.
+-   Neither **researchers** nor **brains** want to do a lot of algebra.
+-   What if there was a better way?!
+-   Replace continuous **distribution** *p*(*μ*, *σ*<sup>2</sup>) with **samples** of plausible hypotheses.
+-   Re-weight samples based on how well they predict the data
 
-## One sample of prior $p(\mu,\sigma^2)$
+One sample of prior *p*(*μ*, *σ*<sup>2</sup>)
+---------------------------------------------
 
-```{r}
-
+``` r
 draw_samples <- function(beliefs, n) {
   map2(beliefs, names(beliefs),
        ~ r_nix2(n, .x) %>%
@@ -218,10 +195,12 @@ prior %>%
   ylim(0, 0.09)
 ```
 
-## Many samples approximate $p(\mu,\sigma^2)$
+![](slides_files/figure-markdown_github/unnamed-chunk-8-1.png)
 
-```{r}
+Many samples approximate *p*(*μ*, *σ*<sup>2</sup>)
+--------------------------------------------------
 
+``` r
 prior_samples <- 
   prior %>%
   draw_samples(100)
@@ -245,9 +224,12 @@ p <- ggplot(prior_samples_pred,
 p  
 ```
 
-## Many samples approximate $p(\mu,\sigma^2)$
+![](slides_files/figure-markdown_github/unnamed-chunk-9-1.png)
 
-```{r}
+Many samples approximate *p*(*μ*, *σ*<sup>2</sup>)
+--------------------------------------------------
+
+``` r
 prior_samples_pred_marg <-
   prior_samples_pred %>%
   group_by(vot, category) %>%
@@ -256,23 +238,22 @@ prior_samples_pred_marg <-
 p <- p +
   geom_line(data=prior_samples_pred_marg, aes(linetype="Approx."), size=2)
 p  
-
 ```
 
-## Weighting samples by importance
+![](slides_files/figure-markdown_github/unnamed-chunk-10-1.png)
 
-* How do you **update** samples to reflect new information?
-* Notation: for each category, there are $K$ samples of $(\mu_k, \sigma^2_k)$,
-  where $k = 1 \ldots K$.
-* Samples are all equally representative of prior, so have the same **initial
-  weight**: $w^k_0 = 1/K$.
-* Re-weight samples based on **likelihood** of data given that sample (how well
-  hypothesis predicts data): $$ w^k_n = w^k_0 p(x_1, \ldots, x_n | \mu_k, \sigma^2_k) $$
+Weighting samples by importance
+-------------------------------
 
-----
+-   How do you **update** samples to reflect new information?
+-   Notation: for each category, there are *K* samples of (*μ*<sub>*k*</sub>, *σ*<sub>*k*</sub><sup>2</sup>), where *k* = 1…*K*.
+-   Samples are all equally representative of prior, so have the same **initial weight**: *w*<sub>0</sub><sup>*k*</sup> = 1/*K*.
+-   Re-weight samples based on **likelihood** of data given that sample (how well hypothesis predicts data):
+    *w*<sub>*n*</sub><sup>*k*</sup> = *w*<sub>0</sub><sup>*k*</sup>*p*(*x*<sub>1</sub>, …, *x*<sub>*n*</sub>|*μ*<sub>*k*</sub>, *σ*<sub>*k*</sub><sup>2</sup>)
 
-```{r}
+------------------------------------------------------------------------
 
+``` r
 p <- ggplot(prior_samples_pred,
        aes(x=vot, color=category)) +
   geom_line(aes(y=lhood, group=interaction(sample, category), alpha=weight)) +
@@ -280,16 +261,19 @@ p <- ggplot(prior_samples_pred,
 p
 ```
 
----
+![](slides_files/figure-markdown_github/unnamed-chunk-11-1.png)
 
-```{r}
+------------------------------------------------------------------------
 
+``` r
 p +  geom_rug(data=one_dat) + ggtitle("Prior samples with one observation")
 ```
 
----
+![](slides_files/figure-markdown_github/unnamed-chunk-12-1.png)
 
-```{r}
+------------------------------------------------------------------------
+
+``` r
 reweight_samples <- function(samples, xs, x_category) {
   samples %>%
     mutate(lhood = map2_dbl(mean, variance, ~prod(dnorm(xs, mean=.x, sd=sqrt(.y)))),
@@ -315,10 +299,11 @@ p <- samples_one_post_pred %>%
 p
 ```
 
----
+![](slides_files/figure-markdown_github/unnamed-chunk-13-1.png)
 
-```{r}
+------------------------------------------------------------------------
 
+``` r
 samples_some_post <-  reweight_samples(prior_samples, some_dat$vot, "p")
 
 samples_some_post_pred <-
@@ -332,14 +317,13 @@ p_some_post <- samples_some_post_pred %>%
   ylim(0, 0.09) +
   ggtitle("Re-weighted samples")
 p_some_post
-
 ```
 
+![](slides_files/figure-markdown_github/unnamed-chunk-14-1.png)
 
----
+------------------------------------------------------------------------
 
-```{r}
-
+``` r
 samples_post_some_pred_marg <-
   samples_some_post_pred %>%
   group_by(vot, category) %>%
@@ -349,44 +333,44 @@ p_some_post +
   geom_line(data = samples_post_some_pred_marg,
             aes(y=lhood, linetype="Approx."), size=2) +
   geom_line(data=post_pred, aes(y=lhood, linetype="Exact"), size=2)
-
-
 ```
 
-## Doing things under uncertainty
+![](slides_files/figure-markdown_github/unnamed-chunk-15-1.png)
 
-* Even if we don't know exactly the mean and variance, we still want to be able
-  to categorize things.
-* If we know the categories' means and variances, this is straightforward: $$ p(c = b | x) = \frac{p(x | \mu_b, \sigma^2_b)p(c=b)}{p(x | \mu_b, \sigma^2_b)p(c=b) + p(x | \mu_p, \sigma^2_p)p(c=p)} $$
-* But we don't know the means and variances!
-* Taking uncertainty about $\mu, \sigma^2$ into account requires **averaging**
-  over plausible values ("marginalizing" in Bayesian jargon).
+Doing things under uncertainty
+------------------------------
 
----
+-   Even if we don't know exactly the mean and variance, we still want to be able to categorize things.
+-   If we know the categories' means and variances, this is straightforward:
+    $$ p(c = b | x) = \\frac{p(x | \\mu\_b, \\sigma^2\_b)p(c=b)}{p(x | \\mu\_b, \\sigma^2\_b)p(c=b) + p(x | \\mu\_p, \\sigma^2\_p)p(c=p)} $$
+-   But we don't know the means and variances!
+-   Taking uncertainty about *μ*, *σ*<sup>2</sup> into account requires **averaging** over plausible values ("marginalizing" in Bayesian jargon).
+
+------------------------------------------------------------------------
 
 $$
-\begin{align}
-  p(c=\mathrm{b} | x) =& \int \cdots \int d\mu_b d\mu_p d\sigma^2_b d\sigma^2_p \\
-  & \frac{p(x | \mu_b, \mu_p) p(c=b)}{p(x | \mu_b, \mu_p) p(c=b) + p(x | \mu_p, \mu_p) p(c=p)} \\ 
-  & p(\mu_b, \mu_p, \sigma^2_b, \sigma^2_p) 
-  \end{align}
+\\begin{align}
+  p(c=\\mathrm{b} | x) =& \\int \\cdots \\int d\\mu\_b d\\mu\_p d\\sigma^2\_b d\\sigma^2\_p \\\\
+  & \\frac{p(x | \\mu\_b, \\mu\_p) p(c=b)}{p(x | \\mu\_b, \\mu\_p) p(c=b) + p(x | \\mu\_p, \\mu\_p) p(c=p)} \\\\ 
+  & p(\\mu\_b, \\mu\_p, \\sigma^2\_b, \\sigma^2\_p) 
+  \\end{align}
 $$
 
----
+------------------------------------------------------------------------
 
 ![](no.jpg)
 
----
+------------------------------------------------------------------------
 
-## Doing things under uncertainty...**with samples!**
+Doing things under uncertainty...**with samples!**
+--------------------------------------------------
 
-* An integral is really a weighted average!
-* So we can calculate the **category boundary for each sample**, and average them together.
+-   An integral is really a weighted average!
+-   So we can calculate the **category boundary for each sample**, and average them together.
 
----
+------------------------------------------------------------------------
 
-```{r}
-
+``` r
 sample_boundaries <- 
   prior_samples_pred %>%
   filter(10 <= vot,
@@ -407,12 +391,13 @@ p <-
   scale_alpha_continuous("Probability", range=c(0.1, 0.5)) +
   ggtitle("Prior boundaries")
 p
-  
 ```
 
----
+![](slides_files/figure-markdown_github/unnamed-chunk-16-1.png)
 
-```{r}
+------------------------------------------------------------------------
+
+``` r
 prior_bounds_marg <-
   sample_boundaries %>%
   group_by(vot) %>%
@@ -422,11 +407,11 @@ p +
   geom_line(data=prior_bounds_marg, size=2)
 ```
 
+![](slides_files/figure-markdown_github/unnamed-chunk-17-1.png)
 
----
+------------------------------------------------------------------------
 
-```{r}
-
+``` r
 weights_one <- samples_one_post %>%
   filter(category=="p") %>%  # only updated /p/
   select(sample, weight)
@@ -447,15 +432,13 @@ ggplot(post_one_bounds, aes(x=vot)) +
   geom_rug(data = one_dat) +
   scale_alpha("Probability", range=c(0.1, 0.7)) +
   ggtitle("Updated boundaries")
-
 ```
 
+![](slides_files/figure-markdown_github/unnamed-chunk-18-1.png)
 
+------------------------------------------------------------------------
 
----
-
-```{r}
-
+``` r
 weights_some <- samples_some_post %>%
   filter(category=="p") %>%  # only updated /p/
   select(sample, weight)
@@ -476,20 +459,21 @@ ggplot(post_some_bounds, aes(x=vot)) +
   geom_rug(data = some_dat) +
   scale_alpha("Probability", range=c(0.1, 0.7)) +
   ggtitle("Updated boundaries")
-
 ```
-  
----
 
+![](slides_files/figure-markdown_github/unnamed-chunk-19-1.png)
 
-# Flexibility of sampling
+------------------------------------------------------------------------
 
-## What if category isn't known?
+Flexibility of sampling
+=======================
 
----
+What if category isn't known?
+-----------------------------
 
-```{r}
+------------------------------------------------------------------------
 
+``` r
 xtreme_dat <- data_frame(vot = c(42, rnorm(10, mean=25, sd=10)), category="p")
 samples_xtreme_post <-  reweight_samples(prior_samples, xtreme_dat$vot, "p")
 
@@ -512,13 +496,13 @@ samples_post_xtreme_pred_marg <-
 p_xtreme_post +
   geom_line(data = samples_post_xtreme_pred_marg,
             aes(y=lhood), size=2)
-
 ```
 
----
+![](slides_files/figure-markdown_github/unnamed-chunk-20-1.png)
 
-```{r}
+------------------------------------------------------------------------
 
+``` r
 weights_xtreme_cat_unknown <-
   prior_samples %>% 
   pred_samples(xtreme_dat$vot) %>%
@@ -544,13 +528,13 @@ pred_xtreme_cat_unknown %>%
             aes(y=lhood, color=category), size=2) +
   geom_rug(data=xtreme_dat) +
   ggtitle("Re-weighted samples (category unknown)")
-
 ```
 
----
+![](slides_files/figure-markdown_github/unnamed-chunk-21-1.png)
 
-```{r}
+------------------------------------------------------------------------
 
+``` r
 pred_xtreme_cat_unknown %>%
   ggplot(aes(x=vot)) +
   ## geom_line(aes(y=lhood, color=category, alpha=weight, group=interaction(category, sample))) +
@@ -563,19 +547,20 @@ pred_xtreme_cat_unknown %>%
   geom_rug(data=xtreme_dat) +
   scale_linetype("") +
   ggtitle("Prior vs. posterior, when category is known vs. unknown")
-
 ```
 
-## Weird priors
+![](slides_files/figure-markdown_github/unnamed-chunk-22-1.png)
 
-* Analytical inference relies on using a **conjugate prior** which can be very restrictive.
-* For normal distribution, means that uncertianty about mean depends on the category variance.
-* What if we're very confident about what the variance $\sigma^2$ but not the mean?
+Weird priors
+------------
 
----
+-   Analytical inference relies on using a **conjugate prior** which can be very restrictive.
+-   For normal distribution, means that uncertianty about mean depends on the category variance.
+-   What if we're very confident about what the variance *σ*<sup>2</sup> but not the mean?
 
-```{r}
+------------------------------------------------------------------------
 
+``` r
 weird_prior_samples <- 
   data_frame(mean = rnorm(100, prior$p$mu, 15),
              variance = rnorm(100, prior$p$sigma2, 20),
@@ -600,14 +585,13 @@ p <- ggplot(weird_prior_pred,
   geom_line(data=weird_prior_samples_pred_marg, size=2) +
   ylim(0, 0.09)
 p
-
 ```
 
----
+![](slides_files/figure-markdown_github/unnamed-chunk-23-1.png)
 
-```{r}
+------------------------------------------------------------------------
 
-
+``` r
 weird_some_post_pred <-
   weird_prior_samples %>%
   reweight_samples(some_dat$vot, "p") %>%
@@ -625,17 +609,16 @@ p <- weird_some_post_pred %>%
   ylim(0, 0.09) +
   ggtitle("Re-weighted samples")
 p
-
-
 ```
 
----
+![](slides_files/figure-markdown_github/unnamed-chunk-24-1.png)
 
-```{r}
+------------------------------------------------------------------------
 
+``` r
 p +
   geom_line(data = weird_some_post_pred_marg,
             aes(y=lhood), size=2)
-
 ```
 
+![](slides_files/figure-markdown_github/unnamed-chunk-25-1.png)
