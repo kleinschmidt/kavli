@@ -6,7 +6,7 @@ R code is available on <https://github.com/kleinschmidt/kavli>
 
 Slides: [davekleinschmidt.com/kavli/lab/slides.html](http://davekleinschmidt.com/kavli/lab/slides.html)
 
-Notebook (code+output): [davekleinschmidt.com/kavli/lab/slides\_notebook.html](http://davekleinschmidt.com/kavli/lab/slides_notebook.html)
+Notebook (code+output): [github.com/kleinschmidt/kavli/tree/master/lab](https://github.com/kleinschmidt/kavli/tree/master/lab)
 
 ``` r
 library(tidyverse)
