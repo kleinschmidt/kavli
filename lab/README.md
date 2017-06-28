@@ -2,11 +2,9 @@ Approximate inference with sampling
 ================
 Dave Kleinschmidt
 
-R code is available on <https://github.com/kleinschmidt/kavli>
-
-Slides: [davekleinschmidt.com/kavli/lab/slides.html](http://davekleinschmidt.com/kavli/lab/slides.html)
-
-Notebook (code+output): [github.com/kleinschmidt/kavli/tree/master/lab](https://github.com/kleinschmidt/kavli/tree/master/lab)
+> -   R source: [github.com/kleinschmidt/kavli](https://github.com/kleinschmidt/kavli)
+> -   Slides: [davekleinschmidt.com/kavli/lab/slides.html](http://davekleinschmidt.com/kavli/lab/slides.html)
+> -   Notebook (code+output): [github.com/kleinschmidt/kavli/tree/master/lab](https://github.com/kleinschmidt/kavli/tree/master/lab)
 
 ``` r
 library(tidyverse)
@@ -74,6 +72,7 @@ Learning from experience
 -   How do we **update our beliefs** based on experience?
 -   **Conceptually**, Bayes Rule:
     *p*(*μ*, *σ*<sup>2</sup>|*x*)∝*p*(*V**O**T* = *x*|*μ*, *σ*<sup>2</sup>)*p*(*μ*, *σ*<sup>2</sup>)
+-   Degree of belief assigned to each *μ*, *σ*<sup>2</sup> after observing *x* is the product of the prior belief and how well *x* is predicted.
 
 ------------------------------------------------------------------------
 
@@ -151,6 +150,10 @@ ggplot(prior_pred, aes(x=vot, color=category)) +
 
 How??
 =====
+
+------------------------------------------------------------------------
+
+![updating rules](update_rules.png)
 
 ------------------------------------------------------------------------
 
@@ -353,9 +356,11 @@ p_some_post +
 ![](README_files/figure-markdown_github/unnamed-chunk-16-1.png)
 
 Doing things under uncertainty
-------------------------------
+==============================
 
--   Even if we don't know exactly the mean and variance, we still want to be able to categorize things.
+------------------------------------------------------------------------
+
+-   Even if we don't know exactly the means and variances, we still want to be able to categorize things.
 -   If we know the categories' means and variances, this is straightforward:
     $$ p(c = b | x) = \\frac{p(x | \\mu\_b, \\sigma^2\_b)p(c=b)}{p(x | \\mu\_b, \\sigma^2\_b)p(c=b) + p(x | \\mu\_p, \\sigma^2\_p)p(c=p)} $$
 -   But we don't know the means and variances!
@@ -365,8 +370,8 @@ Doing things under uncertainty
 
 $$
 \\begin{align}
-  p(c=\\mathrm{b} | x) =& \\int \\cdots \\int d\\mu\_b d\\mu\_p d\\sigma^2\_b d\\sigma^2\_p \\\\
-  & \\frac{p(x | \\mu\_b, \\mu\_p) p(c=b)}{p(x | \\mu\_b, \\mu\_p) p(c=b) + p(x | \\mu\_p, \\mu\_p) p(c=p)} \\\\ 
+  p(c=\\mathrm{b} | x) = \\int \\cdots \\int & d\\mu\_b d\\mu\_p d\\sigma^2\_b d\\sigma^2\_p \\\\
+  & \\frac{p(x | \\mu\_b, \\sigma^2\_p) p(c=b)}{p(x | \\mu\_b, \\sigma^2\_p) p(c=b) + p(x | \\mu\_p, \\sigma^2\_p) p(c=p)} \\\\ 
   & p(\\mu\_b, \\mu\_p, \\sigma^2\_b, \\sigma^2\_p) 
   \\end{align}
 $$
@@ -478,8 +483,6 @@ ggplot(post_some_bounds, aes(x=vot)) +
 
 ![](README_files/figure-markdown_github/unnamed-chunk-20-1.png)
 
-------------------------------------------------------------------------
-
 Flexibility of sampling
 =======================
 
@@ -510,7 +513,10 @@ samples_post_xtreme_pred_marg <-
 
 p_xtreme_post +
   geom_line(data = samples_post_xtreme_pred_marg,
-            aes(y=lhood), size=2)
+            aes(y=lhood, linetype="Posterior"), size=2) +
+  geom_line(data = prior_samples_pred_marg,
+            aes(y=lhood, linetype="Prior"), size=1.5) +
+  scale_linetype("")
 ```
 
 ![](README_files/figure-markdown_github/unnamed-chunk-21-1.png)
@@ -540,9 +546,12 @@ pred_xtreme_cat_unknown %>%
   ggplot(aes(x=vot)) +
   geom_line(aes(y=lhood, color=category, alpha=weight, group=interaction(category, sample))) +
   geom_line(data = pred_xtreme_cat_unknown_marg,
-            aes(y=lhood, color=category), size=2) +
+            aes(y=lhood, color=category, linetype="Posterior"), size=2) +
   geom_rug(data=xtreme_dat) +
-  ggtitle("Re-weighted samples (category unknown)")
+  ggtitle("Re-weighted samples (category unknown)") +
+  geom_line(data = prior_samples_pred_marg,
+            aes(y=lhood, color=category, linetype="Prior"), size=1.5) +
+  scale_linetype("")
 ```
 
 ![](README_files/figure-markdown_github/unnamed-chunk-22-1.png)
@@ -571,7 +580,8 @@ Weird priors
 
 -   Analytical inference relies on using a **conjugate prior** which can be very restrictive.
 -   For normal distribution, means that uncertianty about mean depends on the category variance.
--   What if we're very confident about what the variance *σ*<sup>2</sup> but not the mean?
+-   What if we're very confident about the variance *σ*<sub>*p*</sub><sup>2</sup> but not the mean *μ*<sub>*p*</sub>?
+-   There are no analytical updating rules for this, but we can sample from the prior!
 
 ------------------------------------------------------------------------
 
@@ -596,9 +606,9 @@ weird_prior_samples_pred_marg <-
 
 p <- ggplot(weird_prior_pred,
        aes(x=vot, y=lhood, color=category)) +
-  geom_line(aes(group=interaction(sample, category)), alpha=0.2) +
+  geom_line(aes(group=interaction(sample, category)), alpha=0.4) +
   geom_line(data=weird_prior_samples_pred_marg, size=2) +
-  ylim(0, 0.09)
+  ylim(0, 0.09) + ggtitle("Prior samples")
 p
 ```
 
@@ -622,7 +632,8 @@ p <- weird_some_post_pred %>%
   geom_line(aes(y = lhood, alpha=weight, group=interaction(sample, category))) +
   geom_rug(data=some_dat) +
   ylim(0, 0.09) +
-  ggtitle("Re-weighted samples")
+  ggtitle("Re-weighted samples") +
+  scale_alpha(range=c(0.05, 0.5))
 p
 ```
 
