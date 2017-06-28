@@ -1,0 +1,97 @@
+.reveal section img {
+    border: 0px;
+    box-shadow: none;
+}
+
+.reveal li {
+    margin: 6px 0;
+}
+
+.reveal li .yes {
+    color: #7CAE00;
+}
+
+.reveal li .asking {
+    color: red;
+}
+
+.reveal .sidebyside p {
+    display: inline;
+}
+
+.reveal .cite {
+    font-size: 75%;
+    color: #aaaaaa;
+}
+
+.reveal h1.title {
+    font-weight: bold;
+}
+
+.reveal h2.author {
+    font-size: 1.2em;
+}
+
+.reveal h3.affiliation {
+    font-size: 1em;
+    color: #888888;
+}
+
+.reveal section.title {
+    text-align: left;
+}
+
+.reveal a {
+    color: #FF64B0;
+}
+
+.reveal a:hover {
+    color: #FF91D9;
+}
+
+.reveal .slides section .fragment.highlight-red.visible {
+    color: #FF64B0;
+}
+
+/*********************************************
+ * NAVIGATION CONTROLS
+ *********************************************/
+.reveal .controls .navigate-left,
+.reveal .controls .navigate-left.enabled {
+  border-right-color: #FF64B0; }
+
+.reveal .controls .navigate-right,
+.reveal .controls .navigate-right.enabled {
+  border-left-color: #FF64B0; }
+
+.reveal .controls .navigate-up,
+.reveal .controls .navigate-up.enabled {
+  border-bottom-color: #FF64B0; }
+
+.reveal .controls .navigate-down,
+.reveal .controls .navigate-down.enabled {
+  border-top-color: #FF64B0; }
+
+.reveal .controls .navigate-left.enabled:hover {
+  border-right-color: #FF91D9; }
+
+.reveal .controls .navigate-right.enabled:hover {
+  border-left-color: #FF91D9; }
+
+.reveal .controls .navigate-up.enabled:hover {
+  border-bottom-color: #FF91D9; }
+
+.reveal .controls .navigate-down.enabled:hover {
+  border-top-color: #FF91D9; }
+
+/*********************************************
+ * PROGRESS BAR
+ *********************************************/
+.reveal .progress {
+  background: rgba(0, 0, 0, 0.2); }
+
+.reveal .progress span {
+  background: #FF64B0;
+  -webkit-transition: width 800ms cubic-bezier(0.26, 0.86, 0.44, 0.985);
+  -moz-transition: width 800ms cubic-bezier(0.26, 0.86, 0.44, 0.985);
+  transition: width 800ms cubic-bezier(0.26, 0.86, 0.44, 0.985); }

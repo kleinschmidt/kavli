@@ -1,0 +1,181 @@
+---
+output: 
+    revealjs::revealjs_presentation:
+        transition: none
+        theme: default
+        css: slides.css
+        incremental: true
+---
+
+
+```{r preamble, output="hide", echo=FALSE}
+
+library(tidyverse)
+library(beliefupdatr)
+
+knitr::opts_chunk$set(cache=TRUE, echo=FALSE, message=FALSE, error=FALSE)
+
+set.seed(1)
+
+```
+
+# What does it mean to sample from a distribution?
+
+---
+
+```{r}
+p <- data_frame(vot = seq(-20, 120),
+           lhood = dnorm(vot, mean=60, sd=21)) %>%
+  ggplot(aes(x=vot)) +
+  geom_line(aes(y=lhood)) +
+  ggtitle("Distribution")
+p
+```
+
+---
+
+```{r}
+vot_samples <- data_frame(vot=rnorm(100, mean=60, sd=21))
+p + geom_rug(data=vot_samples) +
+  ggtitle("Samples drawn from distribution")
+```
+
+---
+
+```{r}
+p +
+  geom_rug(data=vot_samples) +
+  geom_histogram(data=vot_samples, aes(y=..density..), alpha=0.5) +
+  ggtitle("Histogram of samples approximates distribution")
+```
+
+# Updating beliefs
+
+## Quantifying uncertainty
+
+* We have two categories /b/ and /p/.  
+* Realized as normal distributions on an acoustic cue $$ p(\mathrm{VOT} | \mu, \sigma^2) $$
+* We **don't know** the mean $\mu$ and variance $\sigma^2$.
+* Express our uncertainty as a **probability distribution** over the mean and
+  variance: $$p(\mu, \sigma^2)$$
+* This distribution assigns a **degree of belief** for each particular
+  combination of mean $\mu$ and variance $\sigma^2$.
+
+## Learning from experience
+
+* How do we **update our beliefs** based on experience?
+* **Conceptually**, Bayes Rule: $$ p(\mu, \sigma^2 | x) \propto p(\mathrm{VOT}=x | \mu, \sigma^2) p(\mu, \sigma^2) $$
+
+---
+
+```{r}
+
+prior <- list(b = nix2_params(mu = 10, sigma2 = 43, kappa = 10, nu = 10),
+              p = nix2_params(mu = 52, sigma2 = 460, kappa = 10, nu = 10))
+
+
+xs <- seq(-20, 120)
+predict <- function(beliefs, xs) {
+  map2(beliefs, names(beliefs),
+       ~ data_frame(category = .y,
+                    vot = xs,
+                    lhood = d_nix2_predict(xs, .x))) %>%
+    lift(bind_rows)()
+}
+
+prior_pred <- prior %>%
+  predict(xs)
+
+p <-
+  prior_pred %>%
+  ggplot(aes(x=vot, color=category)) +
+  geom_line(aes(y=lhood)) +
+  ggtitle("Predictions from prior beliefs")
+```
+
+---
+
+```{r}
+one_dat <- data_frame(vot = 42, category="p")
+p + geom_rug(data=one_dat)
+```
+
+---
+
+```{r}
+updated_beliefs <- update_list(prior, p = nix2_update_one(prior$p, one_dat$vot))
+post_pred <- updated_beliefs %>% predict(xs)
+
+```
+
+
+
+
+```{r, eval=FALSE}
+
+
+
+
+dat <- supunsup::supunsup_clean %>%
+  filter(bvotCond == "0") %>%
+  filter(subject == first(subject)) %>%
+  select(trial, trueCat, vot) %>%
+  mutate(block = ntile(trial, 10))
+
+
+dat %>% group_by(block) %>% nest()
+
+
+
+
+xs <- seq(-20, 90)
+predict <- function(beliefs, xs) {
+  map2(beliefs, names(beliefs),
+       ~ data_frame(category = .y,
+                    vot = xs,
+                    likelihood = d_nix2_predict(xs, .x))) %>%
+    lift(bind_rows)()
+}
+
+tmp <-
+
+p <-   
+
+updated_params <-
+  dat %>%
+  beliefupdatr::belief_update_batch("vot", "trueCat", "trial", seq(23, 221, length.out=10),
+                                    prior) 
+
+updated_predictions <- 
+  updated_params %>%
+  unnest(map(beliefs, predict, xs))
+
+data_by_block <-
+  map(unique(updated_params$trial),
+      ~ dat %>% filter(trial <= .x) %>% mutate(trial=.x, category='trueCat')) %>%
+  lift(bind_rows)()
+
+ggplot(updated_predictions,
+       aes(x=vot, y=likelihood, color=category, alpha=trial, frame=trial,
+           group=interaction(category, trial))) +
+  geom_line() +
+  geom_point(data=data_by_block, aes(y=0, color=trueCat), position=position_jitter(h=0, w=10))
+
+
+
+
+%>%
+  gather("category", "beliefs", -trial)
+
+ %>%
+  mutate(predictions = map(beliefs, predict))
+
+
+true_dists <- list(b = list(mu = 0, sigma2 = 70),
+                   p = list(mu = 40, sigma2 = 70))
+
+data <- data_frame(trial = 1:
+
+
+
+```
